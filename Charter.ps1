@@ -1,63 +1,123 @@
-<#https://blogs.technet.microsoft.com/richard_macdonald/2009/04/28/charting-with-powershell/
+Function Save-Chart {
+    Param
+    (
+        [Parameter(Mandatory=$true)] [string]$ChartType,
+        [Parameter(Mandatory=$true)] [array]$ChartData,
+        [Parameter(Mandatory=$true)] [hashtable]$OutputParams,
+        [hashtable]$ChartParams
+    )
+    
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Windows.Forms.DataVisualization
 
-https://bytecookie.wordpress.com/2012/04/13/tutorial-powershell-and-microsoft-chart-controls-or-how-to-spice-up-your-reports/
+    $Chart = New-Object System.Windows.Forms.DataVisualization.Charting.Chart
+    $ChartArea = New-Object System.Windows.Forms.DataVisualization.Charting.ChartArea
+    $Series = New-Object -TypeName System.Windows.Forms.DataVisualization.Charting.Series
+    $ChartTypes = [System.Windows.Forms.DataVisualization.Charting.SeriesChartType]
 
-https://learn-powershell.net/2016/09/18/building-a-chart-using-powershell-and-chart-controls/
+    $Series.ChartType = $ChartTypes::$ChartType
+    $Chart.Series.Add($Series)
+    $Chart.ChartAreas.Add($ChartArea)
 
-https://msdn.microsoft.com/en-us/library/dd456632.aspx
-#>
+    $Chart.Series['Series1'].Points.DataBindXY($ChartData.Keys, $ChartData.Values)
+
+    #Chart Title
+    if ($ChartParams.Contains('ChartTitleParams')) {
+        $ChartTitle = New-Object System.Windows.Forms.DataVisualization.Charting.Title
+        
+        ForEach ($TitleParam in $ChartParams.ChartTitleParams.Keys) {
+            $ChartTitle.$TitleParam = $ChartParams.ChartTitleParams.$TitleParam    
+        }
+
+        $Chart.Titles.Add($ChartTitle)
+        $ChartParams.Remove('ChartTitleParams')
+    }
+
+    #Chart Legend
+    if ($ChartParams.Contains('LegendParams')) {
+        $Legend = New-Object System.Windows.Forms.DataVisualization.Charting.Legend
+
+        ForEach ($LegendParam in $ChartParams.LegendParams.Keys) {
+            $Legend.$LegendParam = $ChartParams.LegendParams.$LegendParam    
+        }
+
+        $Chart.Legends.Add($Legend)
+        $Chart.Series["Series1"].LegendText = "#VALX (#VALY)"
+        $ChartParams.Remove('LegendParams')
+    }
+
+    #3D Chart
+    if ($ChartParams.Contains('3DParams')) {
+        ForEach ($3DParam in $ChartParams.'3DParams'.Keys) {
+            $ChartArea.Area3DStyle.$3DParam = $ChartParams.'3DParams'.$3DParam    
+        }
+        $ChartParams.Remove('3DParams')
+    }
+
+    #Dataset labelling, enabled by default
+    $Chart.Series['Series1']['PieLabelStyle'] = $ChartParams.PieLabelStyle
+    $ChartParams.Remove('PieLabelStyle')
+
+    ForEach ($Param in $ChartParams.Keys) {
+        $Chart.$Param = $ChartParams.$Param    
+    }
+
+    #Output chart
+    $Chart.SaveImage($OutputParams.Path, $OutputParams.FileType)
+}
+
+#test driver
+$thisChartType = "Line"
+$thisChartData = @{}
+$thisChartParams = @{
+    Width = 700
+    Height = 700
+    Left = 10
+    Top = 10
+    BackColor = [System.Drawing.Color]::White
+    BorderColor = 'Black'
+    BorderDashStyle = 'Solid'
+    ChartTitleParams = @{
+        Text = 'Top 5 Processes by Working Set Memory'
+        Font = New-Object System.Drawing.Font @('Microsoft Sans Serif','12', [System.Drawing.FontStyle]::Bold)
+    }
+    LegendParams = @{
+        IsEquallySpacedItems = $True
+        BorderColor = 'Black'
+    }
+    <#
+    '3DParams' = @{
+        Enable3D = $True
+        Inclination = 50
+    }#>
+    PieLabelStyle = 'Disabled'
+}
+$thisOutputParams = @{
+    Path = "$PSScriptRoot\chart.jpg"
+    FileType = 'jpeg'
+}
 
 $Processes = Get-Process | Sort-Object WS -Descending | Select-Object -First 10
+$DuplicateKeys = @{}
 
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Windows.Forms.DataVisualization
+ForEach ($Process in $Processes)
+{
+    if ($thisChartData.Contains($Process.Name)) 
+    {
+        if ($DuplicateKeys.Contains($Process.Name)) 
+        {
+            $DuplicateKeys.$($Process.Name)++
+        }
+        else 
+        {
+            $DuplicateKeys.Add($Process.Name, 2)
+        }
+        $thisChartData.Add("$($Process.Name)[$($DuplicateKeys.$($Process.Name))]", $Process.WS)
+    }  
+    else 
+    {
+        $thisChartData.Add($Process.Name, $Process.WS)
+    } 
+}
 
-$Chart = New-Object System.Windows.Forms.DataVisualization.Charting.Chart
-$ChartArea = New-Object System.Windows.Forms.DataVisualization.Charting.ChartArea
-$Series = New-Object -TypeName System.Windows.Forms.DataVisualization.Charting.Series
-$ChartTypes = [System.Windows.Forms.DataVisualization.Charting.SeriesChartType]
-
-$Series.ChartType = $ChartTypes::Pie
-
-$Chart.Series.Add($Series)
-$Chart.ChartAreas.Add($ChartArea)
-
-
-$Chart.Series['Series1'].Points.DataBindXY($Processes.Name, $Processes.WS)
-
-$Chart.Width = 700
-$Chart.Height = 700
-$Chart.Left = 10
-$Chart.Top = 10
-$Chart.BackColor = [System.Drawing.Color]::White
-$Chart.BorderColor = 'Black'
-$Chart.BorderDashStyle = 'Solid'
-
-$ChartTitle = New-Object System.Windows.Forms.DataVisualization.Charting.Title
-$ChartTitle.Text = 'Top 5 Processes by Working Set Memory'
-$Font = New-Object System.Drawing.Font @('Microsoft Sans Serif','12', [System.Drawing.FontStyle]::Bold)
-$ChartTitle.Font =$Font
-$Chart.Titles.Add($ChartTitle)
-
-$Chart.Series['Series1']['PieLabelStyle'] = 'Disabled'
-
-$Legend = New-Object System.Windows.Forms.DataVisualization.Charting.Legend
-$Legend.IsEquallySpacedItems = $True
-$Legend.BorderColor = 'Black'
-$Chart.Legends.Add($Legend)
-$Chart.Series["Series1"].LegendText = "#VALX (#VALY)"
-
-#region Windows Form to Display Chart
-$AnchorAll = [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Right -bor
-[System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Left
-$Form = New-Object Windows.Forms.Form
-$Form.Width = 740
-$Form.Height = 490
-$Form.controls.add($Chart)
-$Chart.Anchor = $AnchorAll
-
-$Form.Add_Shown({$Form.Activate()})
-[void]$Form.ShowDialog()
-#endregion Windows Form to Display Chart
-
-$Chart.SaveImage("$PSScriptRoot\chart.jpg", 'jpeg')
+Save-Chart $thisChartType $thisChartData $thisOutputParams $thisChartParams 
