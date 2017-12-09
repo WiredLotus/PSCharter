@@ -60,4 +60,4 @@ $Form.Add_Shown({$Form.Activate()})
 [void]$Form.ShowDialog()
 #endregion Windows Form to Display Chart
 
-$Chart.SaveImage('F:\Code\chart.jpg', 'jpeg')
+$Chart.SaveImage("$PSScriptRoot\chart.jpg", 'jpeg')
