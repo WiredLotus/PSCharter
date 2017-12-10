@@ -36,7 +36,6 @@ $TestChartParams = @{
         Inclination = 50
     }#>
     PieLabelStyle = 'Disabled'
-    #PieLabelStyle = 'Disabled'
 }
 
 $Processes1 = Get-Process | Sort-Object WS -Descending | Select-Object -First 10
