@@ -1,4 +1,4 @@
-Import-Module $PSScriptRoot\Charter.psm1 -force
+Import-Module $PSScriptRoot\ChartLib.psm1 -force
 
 #############
 #TEST DRIVER#
