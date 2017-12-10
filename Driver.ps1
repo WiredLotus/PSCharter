@@ -36,12 +36,13 @@ $TestChartParams = @{
         Inclination = 50
     }#>
     PieLabelStyle = 'Disabled'
+    #PieLabelStyle = 'Disabled'
 }
 
 $Processes1 = Get-Process | Sort-Object WS -Descending | Select-Object -First 10
 $Processes2 = Get-Process | Sort-Object WS -Descending | Select-Object -Last 10
 
-#Add-DataSet $TestChartData $Processes1 'Set 1' 'Name' 'WS' 
-Add-DataSet $TestChartData $Processes2 'Set 2' 'Name' 'WS' 
+Add-DataSet $TestChartData $Processes1 'Set 1' 'Name' 'WS' -BorderWidth 5 -SeriesColor 'Green'
+Add-DataSet $TestChartData $Processes2 'Set 2' 'Name' 'WS' -BorderWidth 5 -SeriesColor 'Red'
 
 Save-Chart $TestChartType $TestChartData $TestOutputParams $TestChartParams

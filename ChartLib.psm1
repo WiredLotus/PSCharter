@@ -24,6 +24,19 @@ Function Save-Chart
     {
         [void]$Chart.Series.Add($DataSet)
         $Chart.Series[$DataSet].ChartType = [System.Windows.Forms.DataVisualization.Charting.SeriesChartType]::$ChartType
+        #Series width
+        if ($ChartData.$DataSet.Contains('SeriesBorderWidth')) 
+        {
+            $Chart.Series[$DataSet].BorderWidth = $ChartData.$DataSet.SeriesBorderWidth;
+            $ChartData.$DataSet.Remove('SeriesBorderWidth')
+        }
+        #Series color
+        if ($ChartData.$DataSet.Contains('SeriesColor')) 
+        {
+            $Chart.Series[$DataSet].Color = $ChartData.$DataSet.SeriesColor;
+            $ChartData.$DataSet.Remove('SeriesColor')
+        }
+
         $Chart.Series[$DataSet].Points.DataBindXY($ChartData.$DataSet.Keys, $ChartData.$DataSet.Values)
     }
 
@@ -69,7 +82,7 @@ Function Save-Chart
         $ChartParams.Remove('3DParams')
     }
 
-    #Dataset labelling, enabled by default
+    #Pie chart dataset labelling - enabled by default
     if ($ChartParams.Contains('PieLabelStyle')) 
     {
         $Chart.Series[$DataSet]['PieLabelStyle'] = $ChartParams.PieLabelStyle
@@ -101,7 +114,9 @@ Function Add-DataSet
         [Parameter(Mandatory=$true)] [array]$DataSet,
         [Parameter(Mandatory=$true)] [string]$DataSetName,
         [Parameter(Mandatory=$true)] [string]$XVar,
-        [Parameter(Mandatory=$true)] [string]$YVar
+        [Parameter(Mandatory=$true)] [string]$YVar,
+        $BorderWidth,
+        $SeriesColor
     )
     $FormattedDataSet  = @{}
     $DuplicateKeys = @{}
@@ -127,6 +142,15 @@ Function Add-DataSet
     }
 
     $DataSets.Add($DataSetName, $FormattedDataSet)
+
+    if ($BorderWidth) 
+    {
+        $DataSets.$DataSetName.Add('SeriesBorderWidth', $BorderWidth)
+    }
+    if ($SeriesColor) 
+    {
+        $DataSets.$DataSetName.Add('SeriesColor', $SeriesColor)
+    }
 }
 
 Function Set-NestedChartProperty 
