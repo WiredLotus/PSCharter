@@ -12,9 +12,6 @@ Function Save-Chart
         [hashtable]$ChartParams
     )
 
-    #Add-Type -AssemblyName System.Windows.Forms
-    #Add-Type -AssemblyName System.Windows.Forms.DataVisualization
-
     $Chart = New-Object System.Windows.Forms.DataVisualization.Charting.Chart
     $ChartArea = New-Object System.Windows.Forms.DataVisualization.Charting.ChartArea
 
@@ -105,12 +102,12 @@ Function Save-Chart
     $Chart.SaveImage($OutputParams.Path, $OutputParams.FileType)
 }
 
-#add data set
+#Format dataset and add to target datasets hashtable
 Function Add-DataSet 
 {
     Param
     (
-        [Parameter(Mandatory=$true)] [hashtable]$DataSets,
+        [Parameter(Mandatory=$true)] [hashtable]$TargetDataSets,
         [Parameter(Mandatory=$true)] [array]$DataSet,
         [Parameter(Mandatory=$true)] [string]$DataSetName,
         [Parameter(Mandatory=$true)] [string]$XVar,
@@ -141,15 +138,15 @@ Function Add-DataSet
         } 
     }
 
-    $DataSets.Add($DataSetName, $FormattedDataSet)
+    $TargetDataSets.Add($DataSetName, $FormattedDataSet)
 
     if ($BorderWidth) 
     {
-        $DataSets.$DataSetName.Add('SeriesBorderWidth', $BorderWidth)
+        $TargetDataSets.$DataSetName.Add('SeriesBorderWidth', $BorderWidth)
     }
     if ($SeriesColor) 
     {
-        $DataSets.$DataSetName.Add('SeriesColor', $SeriesColor)
+        $TargetDataSets.$DataSetName.Add('SeriesColor', $SeriesColor)
     }
 }
 
